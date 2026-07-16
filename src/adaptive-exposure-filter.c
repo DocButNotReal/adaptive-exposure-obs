@@ -1,0 +1,223 @@
+#include <obs-module.h>
+#include <graphics/effect.h>
+#include <util/platform.h>
+#include <math.h>
+#include <stdint.h>
+
+#define BLOG_PREFIX "[Adaptive Exposure] "
+#define SAMPLE_STRIDE 16
+
+struct adaptive_exposure_filter {
+    obs_source_t *context;
+    gs_effect_t *effect;
+    gs_eparam_t *boost_param;
+
+    float dark_threshold;
+    float light_threshold;
+    float maximum_boost;
+    float fade_seconds;
+    float current_boost;
+    float target_boost;
+    float measured_luma;
+
+    bool enabled;
+    bool ignore_black;
+};
+
+static const char *filter_get_name(void *unused)
+{
+    UNUSED_PARAMETER(unused);
+    return obs_module_text("Filter.Name");
+}
+
+static void filter_update(void *data, obs_data_t *settings)
+{
+    struct adaptive_exposure_filter *filter = data;
+
+    filter->enabled = obs_data_get_bool(settings, "enabled");
+    filter->dark_threshold =
+        (float)obs_data_get_double(settings, "dark_threshold") / 255.0f;
+    filter->light_threshold =
+        (float)obs_data_get_double(settings, "light_threshold") / 255.0f;
+    filter->maximum_boost =
+        (float)obs_data_get_double(settings, "maximum_boost");
+    filter->fade_seconds =
+        (float)obs_data_get_double(settings, "fade_seconds");
+    filter->ignore_black = obs_data_get_bool(settings, "ignore_black");
+
+    if (filter->light_threshold <= filter->dark_threshold)
+        filter->light_threshold = filter->dark_threshold + (1.0f / 255.0f);
+}
+
+static void filter_defaults(obs_data_t *settings)
+{
+    obs_data_set_default_bool(settings, "enabled", true);
+    obs_data_set_default_double(settings, "dark_threshold", 45.0);
+    obs_data_set_default_double(settings, "light_threshold", 62.0);
+    obs_data_set_default_double(settings, "maximum_boost", 0.45);
+    obs_data_set_default_double(settings, "fade_seconds", 1.5);
+    obs_data_set_default_bool(settings, "ignore_black", true);
+}
+
+static obs_properties_t *filter_properties(void *data)
+{
+    UNUSED_PARAMETER(data);
+
+    obs_properties_t *props = obs_properties_create();
+
+    obs_properties_add_bool(props, "enabled", obs_module_text("Enabled"));
+
+    obs_properties_add_float_slider(
+        props, "dark_threshold", obs_module_text("DarkThreshold"),
+        0.0, 255.0, 1.0);
+
+    obs_properties_add_float_slider(
+        props, "light_threshold", obs_module_text("LightThreshold"),
+        0.0, 255.0, 1.0);
+
+    obs_properties_add_float_slider(
+        props, "maximum_boost", obs_module_text("MaximumBoost"),
+        0.0, 1.5, 0.01);
+
+    obs_properties_add_float_slider(
+        props, "fade_seconds", obs_module_text("FadeSeconds"),
+        0.05, 10.0, 0.05);
+
+    obs_properties_add_bool(
+        props, "ignore_black", obs_module_text("IgnoreBlack"));
+
+    return props;
+}
+
+static void *filter_create(obs_data_t *settings, obs_source_t *context)
+{
+    struct adaptive_exposure_filter *filter =
+        bzalloc(sizeof(struct adaptive_exposure_filter));
+
+    filter->context = context;
+    filter->measured_luma = 0.0f;
+
+    char *effect_path =
+        obs_module_file("effects/adaptive-exposure.effect");
+    char *error_string = NULL;
+
+    obs_enter_graphics();
+    filter->effect =
+        gs_effect_create_from_file(effect_path, &error_string);
+    obs_leave_graphics();
+
+    bfree(effect_path);
+
+    if (!filter->effect) {
+        blog(LOG_ERROR, BLOG_PREFIX "Could not load shader: %s",
+             error_string ? error_string : "unknown error");
+        bfree(error_string);
+        bfree(filter);
+        return NULL;
+    }
+
+    bfree(error_string);
+    filter->boost_param =
+        gs_effect_get_param_by_name(filter->effect, "boost");
+
+    filter_update(filter, settings);
+    return filter;
+}
+
+static void filter_destroy(void *data)
+{
+    struct adaptive_exposure_filter *filter = data;
+    if (!filter)
+        return;
+
+    obs_enter_graphics();
+    gs_effect_destroy(filter->effect);
+    obs_leave_graphics();
+
+    bfree(filter);
+}
+
+/*
+ * OBS supplies CPU frames to filter_video for asynchronous video sources.
+ * This prototype measures packed BGRA/BGRX/RGBA frames. Unsupported formats
+ * continue rendering, but retain the most recent valid luminance reading.
+ */
+
+
+static void filter_tick(void *data, float seconds)
+{
+	struct adaptive_exposure_filter *filter = data;
+
+	if (!filter->enabled) {
+		filter->target_boost = 0.0f;
+	} else {
+		const float luma = filter->measured_luma;
+		const bool near_black = luma < (3.0f / 255.0f);
+
+		if (filter->ignore_black && near_black) {
+			filter->target_boost = 0.0f;
+		} else if (luma < filter->dark_threshold) {
+			float range = filter->dark_threshold;
+
+			float darkness = range > 0.0001f ? (filter->dark_threshold - luma) / range : 1.0f;
+
+			if (darkness < 0.0f)
+				darkness = 0.0f;
+
+			if (darkness > 1.0f)
+				darkness = 1.0f;
+
+			filter->target_boost = darkness * filter->maximum_boost;
+
+		} else if (luma > filter->light_threshold) {
+			filter->target_boost = 0.0f;
+		}
+	}
+
+	const float duration = filter->fade_seconds < 0.05f ? 0.05f : filter->fade_seconds;
+
+	float amount = seconds / duration;
+
+	if (amount > 1.0f)
+		amount = 1.0f;
+
+	if (filter->current_boost < filter->target_boost) {
+		filter->current_boost += (filter->target_boost - filter->current_boost) * amount;
+	} else {
+		filter->current_boost -= (filter->current_boost - filter->target_boost) * amount;
+	}
+
+	if (fabsf(filter->current_boost - filter->target_boost) < 0.0001f) {
+		filter->current_boost = filter->target_boost;
+	}
+}
+
+static void filter_render(void *data, gs_effect_t *unused_effect)
+{
+    UNUSED_PARAMETER(unused_effect);
+
+    struct adaptive_exposure_filter *filter = data;
+
+    if (!obs_source_process_filter_begin(
+            filter->context, GS_RGBA, OBS_ALLOW_DIRECT_RENDERING))
+        return;
+
+    gs_effect_set_float(filter->boost_param, filter->current_boost);
+
+    obs_source_process_filter_end(
+        filter->context, filter->effect, 0, 0);
+}
+
+struct obs_source_info adaptive_exposure_filter_info = {
+    .id = "adaptive_exposure_filter",
+    .type = OBS_SOURCE_TYPE_FILTER,
+    .output_flags = OBS_SOURCE_VIDEO,
+    .get_name = filter_get_name,
+    .create = filter_create,
+    .destroy = filter_destroy,
+    .update = filter_update,
+    .get_defaults = filter_defaults,
+    .get_properties = filter_properties,
+    .video_tick = filter_tick,
+    .video_render = filter_render,
+};

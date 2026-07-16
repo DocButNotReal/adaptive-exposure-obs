@@ -32,14 +32,14 @@
         }
     },
     "platformConfig": {
-        "macos": {
-            "bundleId": "com.example.plugintemplate-for-obs"
-        }
+      "macos": {
+        "bundleId": "com.doc.adaptive-exposure"
+      }
     },
-    "name": "plugintemplate-for-obs",
-    "displayName": "Plugin Template for OBS",
+    "name": "adaptive-exposure",
+    "displayName": "Adaptive Exposure",
     "version": "1.0.0",
-    "author": "Your Name Here",
-    "website": "https://example.com",
+    "author": "DocButNotReal",
+    "website": "https://github.com/docbutnotreal/adaptive-exposure-obs",
     "email": "me@example.com"
 }

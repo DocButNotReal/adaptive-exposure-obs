@@ -1,0 +1,49 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+uniform float boost = 0.0;
+
+sampler_state textureSampler {
+    Filter   = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv  : TEXCOORD0;
+};
+
+VertData VSDefault(VertData v_in)
+{
+    VertData vert_out;
+    vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv = v_in.uv;
+    return vert_out;
+}
+
+float3 ApplyExposure(float3 rgb)
+{
+    /*
+     * Lift shadows more than highlights. This is intentionally gentle:
+     * boost=0 is untouched, while larger values brighten dark gameplay.
+     */
+    float3 lifted = 1.0 - pow(saturate(1.0 - rgb), 1.0 + boost * 2.5);
+    float highlight_guard = 1.0 - smoothstep(0.65, 1.0, rgb);
+    return saturate(lerp(rgb, lifted, highlight_guard));
+}
+
+float4 PSAdaptiveExposure(VertData v_in) : TARGET
+{
+    float4 color = image.Sample(textureSampler, v_in.uv);
+    color.rgb = ApplyExposure(color.rgb);
+    return color;
+}
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(v_in);
+        pixel_shader  = PSAdaptiveExposure(v_in);
+    }
+}
