@@ -1,66 +1,88 @@
-# DocVision – Adaptive Exposure
+# 🎮 DocVision – Adaptive Exposure
 
-Automatically brighten dark gameplay in OBS Studio without permanently washing out your image.
+> Automatically brighten dark gameplay in OBS Studio without washing out your stream.
 
-DocVision analyses the brightness of your captured gameplay in real time and smoothly applies an exposure adjustment only when the scene becomes too dark.
+DocVision is a native OBS Studio filter that continuously analyses scene brightness using GPU luminance sampling and automatically adjusts exposure when gameplay becomes too dark.
 
-Designed primarily for games like:
-
-- DayZ
-- Escape From Tarkov
-- Rust
-- Hunt: Showdown
-- PUBG
-- Any game with large dark areas
+Designed with survival and extraction games in mind where viewers often struggle to see what's happening during night-time gameplay.
 
 ---
 
-## Features
+## ✨ Features
 
 - 🎮 Native OBS Studio filter
-- ⚡ GPU-based luminance detection
+- ⚡ GPU accelerated luminance detection
 - 🌙 Automatic dark scene detection
 - ☀️ Automatic recovery when scenes become bright
-- 🎚 Adjustable exposure thresholds
-- ⏱ Smooth fade-in and fade-out
+- 🎚 Adjustable dark & light thresholds
+- ⏱ Independent fade-in and fade-out speeds
 - 🧠 Brightness smoothing
-- 🚫 Near-black/loading screen protection
-- ⌨ OBS hotkey support
-- 🪶 Lightweight GPU usage
+- 🚫 Near-black / loading screen protection
+- ⌨️ Toggle automation with an OBS hotkey
+- 🪶 Lightweight and designed for real-time streaming
 
-## Installation
+---
 
-1. Download the latest release from the Releases page.
+# 📸 Example
+
+## Before
+
+*(Add screenshot here)*
+
+---
+
+## After
+
+*(Add screenshot here)*
+
+---
+
+# ⚙️ Installation
+
+> **Recommended:** Back up your OBS profile and scene collection before installing any third-party plugin.
+
+1. Download the latest release from the **Releases** page.
 2. Close OBS Studio.
 3. Extract the ZIP.
 4. Copy the included folders into:
 
+```
 C:\Program Files\obs-studio
+```
 
-5. Restart OBS.
-6. Add **DocVision – Adaptive Exposure** as a filter to your Game Capture, Window Capture or Display Capture source.
+5. Allow Windows to merge the folders.
+6. Restart OBS.
+7. Open the Filters window of a Game Capture, Window Capture or Display Capture source.
+8. Add **DocVision – Adaptive Exposure**.
 
 ---
 
-## Default Settings
+# ⚙️ Default Settings
 
-| Setting | Default |
-|---------|---------:|
+| Setting | Value |
+|---------|------:|
 | Dark Threshold | 45 |
 | Light Threshold | 62 |
-| Maximum Boost | 0.45 |
-| Fade In | 1.5s |
-| Fade Out | 0.8s |
-| Smoothing | 0.65 |
-| Sample Rate | 250 ms |
+| Maximum Exposure Boost | 0.45 |
+| Fade In | 1.5 seconds |
+| Fade Out | 0.8 seconds |
+| Brightness Smoothing | 0.65 |
+| Detection Interval | 250 ms |
+
+These values are intended as a good starting point and can be adjusted for different games.
 
 ---
 
-## Tested With
+# ✅ Tested With
 
-✅ OBS Studio 32.x
+### Operating Systems
 
-✅ Windows 11
+- Windows 10
+- Windows 11
+
+### OBS Studio
+
+- OBS Studio 32.x
 
 ### Capture Types
 
@@ -70,52 +92,104 @@ C:\Program Files\obs-studio
 
 ---
 
-## Roadmap
+# 🕹 Recommended Games
 
-### Version 0.2
+DocVision was primarily designed for games featuring large dark environments such as:
 
-- Improved game profiles
-- Better brightness curve
-- Performance optimisation
+- DayZ
+- Escape From Tarkov
+- Rust
+- Hunt: Showdown
+- PUBG
 
-### Version 0.3
+It should also work well with many other games.
 
-- Auto calibration
-- Profile presets
-- Better statistics
+---
 
-### Future
+# 🚧 Beta Software
+
+DocVision is currently in **Beta**.
+
+Although it has been tested extensively, every OBS setup is different.
+
+You may encounter unexpected behaviour and your feedback is greatly appreciated.
+
+---
+
+# ⚠️ Disclaimer
+
+This software is provided **"AS IS"**, without warranty of any kind.
+
+By installing this plugin you acknowledge that:
+
+- You use it entirely at your own risk.
+- The author cannot be held responsible for crashes, corrupted OBS configurations, data loss or any damage resulting from the use of this software.
+- Always back up your OBS profile and scene collection before installing third-party plugins.
+
+If you discover a bug, please open a GitHub Issue.
+
+---
+
+# 🐞 Reporting Bugs
+
+Please include:
+
+- Windows version
+- OBS version
+- Game
+- Capture type
+- Plugin version
+- OBS log file
+- Screenshots if applicable
+
+The more information provided, the easier it is to reproduce and fix the issue.
+
+---
+
+# 🗺 Roadmap
+
+## Version 0.2
+
+- Better exposure curve
+- Additional optimisation
+- Improved Game Capture behaviour
+
+## Version 0.3
+
+- Automatic calibration
+- Game presets
+- Better diagnostics
+
+## Future Ideas
 
 - HDR support
+- Per-game profiles
 - Multi-monitor optimisation
 - Linux support
 - macOS support
 
 ---
 
-## Reporting Bugs
+# ❤️ Contributing
 
-If you find a bug, please open a GitHub Issue and include:
+Suggestions, feature requests and pull requests are always welcome.
 
-- Windows version
-- OBS version
-- Game
-- Capture type
-- Screenshots if possible
-- OBS log
+If you have an idea that would improve DocVision, feel free to open a GitHub Discussion or Issue.
 
 ---
 
-## Contributing
+# 📄 License
 
-Suggestions and pull requests are welcome.
+This project is licensed under the MIT License.
 
----
-
-## License
-
-MIT License
+See the [LICENSE](LICENSE) file for details.
 
 ---
 
-Created by **DocButNotReal**.
+# 👨‍💻 Created By
+
+Created by **DocButNotReal**
+
+If you enjoy using DocVision, consider leaving a ⭐ on GitHub.
+
+It really helps the project grow.
