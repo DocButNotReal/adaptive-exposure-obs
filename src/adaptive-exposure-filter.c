@@ -8,20 +8,46 @@
 #define SAMPLE_STRIDE 16
 
 struct adaptive_exposure_filter {
-    obs_source_t *context;
-    gs_effect_t *effect;
-    gs_eparam_t *boost_param;
+	obs_source_t *context;
 
-    float dark_threshold;
-    float light_threshold;
-    float maximum_boost;
-    float fade_seconds;
-    float current_boost;
-    float target_boost;
-    float measured_luma;
+	gs_effect_t *effect;
+	gs_eparam_t *boost_param;
 
-    bool enabled;
-    bool ignore_black;
+	/*
+     * Small GPU render target used to create a reduced copy
+     * of the captured image for brightness analysis.
+     */
+	gs_texrender_t *sample_render;
+
+	/*
+     * CPU-readable surface that receives the reduced GPU image.
+     */
+	gs_stagesurf_t *stage_surface;
+
+	float dark_threshold;
+	float light_threshold;
+	float maximum_boost;
+	float fade_seconds;
+
+	float current_boost;
+	float target_boost;
+	float measured_luma;
+
+	/*
+     * Controls how often brightness is measured.
+     */
+	float sample_timer;
+	float sample_interval;
+
+	/*
+     * Size of the reduced brightness sample.
+     */
+	uint32_t sample_width;
+	uint32_t sample_height;
+
+	bool enabled;
+	bool ignore_black;
+	bool sample_ready;
 };
 
 static const char *filter_get_name(void *unused)
@@ -95,15 +121,24 @@ static void *filter_create(obs_data_t *settings, obs_source_t *context)
         bzalloc(sizeof(struct adaptive_exposure_filter));
 
     filter->context = context;
-    filter->measured_luma = 0.0f;
-
+    filter->measured_luma = 1.0f;
+    filter->sample_width = 64;
+    filter->sample_height = 36;
+    filter->sample_interval = 0.25f;
+    filter->sample_timer = 0.0f;
+    filter->sample_ready = false;
     char *effect_path =
         obs_module_file("effects/adaptive-exposure.effect");
     char *error_string = NULL;
 
-    obs_enter_graphics();
-    filter->effect =
-        gs_effect_create_from_file(effect_path, &error_string);
+obs_enter_graphics();
+
+    filter->effect = gs_effect_create_from_file(effect_path, &error_string);
+
+    filter->sample_render = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+
+    filter->stage_surface = gs_stagesurface_create(filter->sample_width, filter->sample_height, GS_BGRA);
+
     obs_leave_graphics();
 
     bfree(effect_path);
@@ -114,6 +149,26 @@ static void *filter_create(obs_data_t *settings, obs_source_t *context)
         bfree(error_string);
         bfree(filter);
         return NULL;
+    }
+  
+    if (!filter->sample_render || !filter->stage_surface) {
+	    blog(LOG_ERROR, BLOG_PREFIX "Could not create luminance sampling resources");
+
+	    obs_enter_graphics();
+
+	    if (filter->sample_render)
+		    gs_texrender_destroy(filter->sample_render);
+
+	    if (filter->stage_surface)
+		    gs_stagesurface_destroy(filter->stage_surface);
+
+	    if (filter->effect)
+		    gs_effect_destroy(filter->effect);
+
+	    obs_leave_graphics();
+
+	    bfree(filter);
+	    return NULL;
     }
 
     bfree(error_string);
@@ -126,15 +181,25 @@ static void *filter_create(obs_data_t *settings, obs_source_t *context)
 
 static void filter_destroy(void *data)
 {
-    struct adaptive_exposure_filter *filter = data;
-    if (!filter)
-        return;
+	struct adaptive_exposure_filter *filter = data;
 
-    obs_enter_graphics();
-    gs_effect_destroy(filter->effect);
-    obs_leave_graphics();
+	if (!filter)
+		return;
 
-    bfree(filter);
+	obs_enter_graphics();
+
+	if (filter->sample_render)
+		gs_texrender_destroy(filter->sample_render);
+
+	if (filter->stage_surface)
+		gs_stagesurface_destroy(filter->stage_surface);
+
+	if (filter->effect)
+		gs_effect_destroy(filter->effect);
+
+	obs_leave_graphics();
+
+	bfree(filter);
 }
 
 /*
@@ -147,7 +212,7 @@ static void filter_destroy(void *data)
 static void filter_tick(void *data, float seconds)
 {
 	struct adaptive_exposure_filter *filter = data;
-
+	filter->sample_timer += seconds;
 	if (!filter->enabled) {
 		filter->target_boost = 0.0f;
 	} else {
