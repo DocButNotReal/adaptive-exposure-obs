@@ -1,59 +1,121 @@
-# OBS Plugin Template
+# DocVision – Adaptive Exposure
 
-## Introduction
+Automatically brighten dark gameplay in OBS Studio without permanently washing out your image.
 
-The plugin template is meant to be used as a starting point for OBS Studio plugin development. It includes:
+DocVision analyses the brightness of your captured gameplay in real time and smoothly applies an exposure adjustment only when the scene becomes too dark.
 
-* Boilerplate plugin source code
-* A CMake project file
-* GitHub Actions workflows and repository actions
+Designed primarily for games like:
 
-## Supported Build Environments
+- DayZ
+- Escape From Tarkov
+- Rust
+- Hunt: Showdown
+- PUBG
+- Any game with large dark areas
 
-| Platform  | Tool   |
-|-----------|--------|
-| Windows   | Visual Studio 17 2022 |
-| macOS     | XCode 16.0 |
-| Windows, macOS  | CMake 3.30.5 |
-| Ubuntu 24.04 | CMake 3.28.3 |
-| Ubuntu 24.04 | `ninja-build` |
-| Ubuntu 24.04 | `pkg-config`
-| Ubuntu 24.04 | `build-essential` |
+---
 
-## Quick Start
+## Features
 
-An absolute bare-bones [Quick Start Guide](https://github.com/obsproject/obs-plugintemplate/wiki/Quick-Start-Guide) is available in the wiki.
+- 🎮 Native OBS Studio filter
+- ⚡ GPU-based luminance detection
+- 🌙 Automatic dark scene detection
+- ☀️ Automatic recovery when scenes become bright
+- 🎚 Adjustable exposure thresholds
+- ⏱ Smooth fade-in and fade-out
+- 🧠 Brightness smoothing
+- 🚫 Near-black/loading screen protection
+- ⌨ OBS hotkey support
+- 🪶 Lightweight GPU usage
 
-## Documentation
+## Installation
 
-All documentation can be found in the [Plugin Template Wiki](https://github.com/obsproject/obs-plugintemplate/wiki).
+1. Download the latest release from the Releases page.
+2. Close OBS Studio.
+3. Extract the ZIP.
+4. Copy the included folders into:
 
-Suggested reading to get up and running:
+C:\Program Files\obs-studio
 
-* [Getting started](https://github.com/obsproject/obs-plugintemplate/wiki/Getting-Started)
-* [Build system requirements](https://github.com/obsproject/obs-plugintemplate/wiki/Build-System-Requirements)
-* [Build system options](https://github.com/obsproject/obs-plugintemplate/wiki/CMake-Build-System-Options)
+5. Restart OBS.
+6. Add **DocVision – Adaptive Exposure** as a filter to your Game Capture, Window Capture or Display Capture source.
 
-## GitHub Actions & CI
+---
 
-Default GitHub Actions workflows are available for the following repository actions:
+## Default Settings
 
-* `push`: Run for commits or tags pushed to `master` or `main` branches.
-* `pr-pull`: Run when a Pull Request has been pushed or synchronized.
-* `dispatch`: Run when triggered by the workflow dispatch in GitHub's user interface.
-* `build-project`: Builds the actual project and is triggered by other workflows.
-* `check-format`: Checks CMake and plugin source code formatting and is triggered by other workflows.
+| Setting | Default |
+|---------|---------:|
+| Dark Threshold | 45 |
+| Light Threshold | 62 |
+| Maximum Boost | 0.45 |
+| Fade In | 1.5s |
+| Fade Out | 0.8s |
+| Smoothing | 0.65 |
+| Sample Rate | 250 ms |
 
-The workflows make use of GitHub repository actions (contained in `.github/actions`) and build scripts (contained in `.github/scripts`) which are not needed for local development, but might need to be adjusted if additional/different steps are required to build the plugin.
+---
 
-### Retrieving build artifacts
+## Tested With
 
-Successful builds on GitHub Actions will produce build artifacts that can be downloaded for testing. These artifacts are commonly simple archives and will not contain package installers or installation programs.
+✅ OBS Studio 32.x
 
-### Building a Release
+✅ Windows 11
 
-To create a release, an appropriately named tag needs to be pushed to the `main`/`master` branch using semantic versioning (e.g., `12.3.4`, `23.4.5-beta2`). A draft release will be created on the associated repository with generated installer packages or installation programs attached as release artifacts.
+### Capture Types
 
-## Signing and Notarizing on macOS
+- Window Capture
+- Display Capture
+- Game Capture
 
-Basic concepts of codesigning and notarization on macOS are explained in the correspodning [Wiki article](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS) which has a specific section for the [GitHub Actions setup](https://github.com/obsproject/obs-plugintemplate/wiki/Codesigning-On-macOS#setting-up-code-signing-for-github-actions).
+---
+
+## Roadmap
+
+### Version 0.2
+
+- Improved game profiles
+- Better brightness curve
+- Performance optimisation
+
+### Version 0.3
+
+- Auto calibration
+- Profile presets
+- Better statistics
+
+### Future
+
+- HDR support
+- Multi-monitor optimisation
+- Linux support
+- macOS support
+
+---
+
+## Reporting Bugs
+
+If you find a bug, please open a GitHub Issue and include:
+
+- Windows version
+- OBS version
+- Game
+- Capture type
+- Screenshots if possible
+- OBS log
+
+---
+
+## Contributing
+
+Suggestions and pull requests are welcome.
+
+---
+
+## License
+
+MIT License
+
+---
+
+Created by **DocButNotReal**.
