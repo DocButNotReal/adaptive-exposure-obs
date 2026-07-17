@@ -21,21 +21,6 @@ Designed with survival and extraction games in mind where viewers often struggle
 - ⌨️ Toggle automation with an OBS hotkey
 - 🪶 Lightweight and designed for real-time streaming
 
----
-
-# 📸 Example
-
-## Before
-
-*(Add screenshot here)*
-
----
-
-## After
-
-*(Add screenshot here)*
-
----
 
 # ⚙️ Installation
 
