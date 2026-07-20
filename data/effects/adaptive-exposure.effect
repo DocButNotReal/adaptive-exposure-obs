@@ -1,6 +1,7 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float boost = 0.0;
+uniform float exposure_strength = 3.0;
 
 sampler_state textureSampler {
     Filter   = Linear;
@@ -24,12 +25,22 @@ VertData VSDefault(VertData v_in)
 float3 ApplyExposure(float3 rgb)
 {
     /*
-     * Lift shadows more than highlights. This is intentionally gentle:
-     * boost=0 is untouched, while larger values brighten dark gameplay.
+     * Lift shadows more than highlights.
+     * Exposure strength controls how strongly the calculated
+     * adaptive boost affects the final image.
      */
-    float3 lifted = 1.0 - pow(saturate(1.0 - rgb), 1.0 + boost * 2.5);
-    float highlight_guard = 1.0 - smoothstep(0.65, 1.0, rgb);
-    return saturate(lerp(rgb, lifted, highlight_guard));
+    float effective_boost = boost * exposure_strength;
+
+    float3 lifted =
+        1.0 - pow(
+            saturate(1.0 - rgb),
+            1.0 + effective_boost);
+
+    float highlight_guard =
+        1.0 - smoothstep(0.65, 1.0, rgb);
+
+    return saturate(
+        lerp(rgb, lifted, highlight_guard));
 }
 
 float4 PSAdaptiveExposure(VertData v_in) : TARGET

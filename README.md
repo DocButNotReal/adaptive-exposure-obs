@@ -1,6 +1,10 @@
 # 🎮 DocVision – Adaptive Exposure
 
-> Automatically brighten dark gameplay in OBS Studio without washing out your stream.
+![OBS](https://img.shields.io/badge/OBS-32.x-blue)
+![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-success)
+![License](https://img.shields.io/badge/License-MIT-green)
+
+> Unlike static filters, DocVision continuously adapts exposure based on scene brightness, helping viewers see dark gameplay while preserving highlights and true blacks.
 
 DocVision is a native OBS Studio filter that continuously analyses scene brightness using GPU luminance sampling and automatically adjusts exposure when gameplay becomes too dark.
 
@@ -20,20 +24,12 @@ Designed with survival and extraction games in mind where viewers often struggle
 - 🚫 Near-black / loading screen protection
 - ⌨️ Toggle automation with an OBS hotkey
 - 🪶 Lightweight and designed for real-time streaming
+- 🎚 Exposure Strength control
+- 📈 Adjustable exposure curve
+- ⚫ True black protection
+- 🌑 Near-black boost limiting
 
 ---
-
-# 📸 Example
-
-## Before
-
-*(Add screenshot here)*
-
----
-
-## After
-
-*(Add screenshot here)*
 
 ---
 
@@ -106,13 +102,11 @@ It should also work well with many other games.
 
 ---
 
-# 🚧 Beta Software
+# 🚧 Stable Release
 
-DocVision is currently in **Beta**.
+DocVision v1.1.0 is the first stable public release.
 
-Although it has been tested extensively, every OBS setup is different.
-
-You may encounter unexpected behaviour and your feedback is greatly appreciated.
+If you discover any issues, please report them via GitHub Issues.
 
 ---
 
@@ -148,23 +142,20 @@ The more information provided, the easier it is to reproduce and fix the issue.
 
 # 🗺 Roadmap
 
-## Version 0.2
+# 🗺 Roadmap
 
-- Better exposure curve
+## Version 1.2
+
+- Built-in presets
+- User-saveable presets
+- Smarter exposure detection
 - Additional optimisation
-- Improved Game Capture behaviour
 
-## Version 0.3
+## Future
 
-- Automatic calibration
-- Game presets
-- Better diagnostics
-
-## Future Ideas
-
+- Auto calibration
 - HDR support
 - Per-game profiles
-- Multi-monitor optimisation
 - Linux support
 - macOS support
 

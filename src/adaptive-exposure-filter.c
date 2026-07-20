@@ -21,6 +21,7 @@ struct adaptive_exposure_filter {
 
 	gs_effect_t *effect;
 	gs_eparam_t *boost_param;
+	gs_eparam_t *exposure_strength_param;
 
 	gs_texrender_t *sample_render;
 	gs_stagesurf_t *stage_surface;
@@ -30,7 +31,7 @@ struct adaptive_exposure_filter {
 	float dark_threshold;
 	float light_threshold;
 	float maximum_boost;
-
+	float exposure_strength;
 	float fade_in_seconds;
 	float fade_out_seconds;
 	float dark_delay_seconds;
@@ -122,6 +123,9 @@ static void filter_update(void *data, obs_data_t *settings)
 	filter->maximum_boost =
 		(float)obs_data_get_double(settings, "maximum_boost");
 
+	filter->exposure_strength = 
+		(float)obs_data_get_double(settings, "exposure_strength");
+
 	filter->fade_in_seconds =
 		(float)obs_data_get_double(settings, "fade_in_seconds");
 
@@ -180,8 +184,14 @@ static void filter_update(void *data, obs_data_t *settings)
 	if (filter->exposure_curve < 0.25f)
 		filter->exposure_curve = 0.25f;
 
-	if (filter->exposure_curve > 4.0f)
-		filter->exposure_curve = 4.0f;
+	if (filter->exposure_curve > 5.0f)
+		filter->exposure_curve = 5.0f;
+
+	if (filter->exposure_strength < 0.5f)
+		filter->exposure_strength = 0.5f;
+
+	if (filter->exposure_strength > 6.0f)
+		filter->exposure_strength = 6.0f;
 
 	if (filter->black_limited_boost < 0.0f)
 		filter->black_limited_boost = 0.0f;
@@ -209,7 +219,7 @@ static void filter_defaults(obs_data_t *settings)
 		settings, "light_threshold", 62.0);
 
 	obs_data_set_default_double(
-		settings, "maximum_boost", 0.45);
+		settings, "maximum_boost", 3.0);
 
 	obs_data_set_default_double(
 		settings, "fade_in_seconds", 1.5);
@@ -272,21 +282,29 @@ static obs_properties_t *filter_properties(void *data)
 		0.0,
 		255.0,
 		1.0);
+	
+	obs_properties_add_float_slider(
+		props, 
+		"maximum_boost", 
+		obs_module_text("MaximumBoost"), 
+		0.0, 
+		5.0, 
+		0.05);
 
 	obs_properties_add_float_slider(
-		props,
-		"maximum_boost",
-		obs_module_text("MaximumBoost"),
-		0.0,
-		1.5,
-		0.01);
+		props, 
+		"exposure_strength", 
+		obs_module_text("ExposureStrength"), 
+		0.5, 
+		6.0, 
+		0.1);
 
 	obs_properties_add_float_slider(
-		props,
-		"exposure_curve",
-		obs_module_text("ExposureCurve"),
-		0.25,
-		4.0,
+		props, 
+		"exposure_curve", 
+		obs_module_text("ExposureCurve"), 
+		0.25, 
+		5.0, 
 		0.05);
 
 	obs_properties_add_float_slider(
@@ -355,8 +373,8 @@ static obs_properties_t *filter_properties(void *data)
 		"black_limited_boost",
 		obs_module_text("BlackLimitedBoost"),
 		0.0,
-		0.5,
-		0.01);
+		5.0,
+		0.05);
 
 	obs_properties_add_bool(
 		props,
@@ -474,6 +492,13 @@ static void *filter_create(obs_data_t *settings,
 		blog(LOG_ERROR,
 		     BLOG_PREFIX
 		     "Shader parameter 'boost' was not found");
+		goto fail;
+	}
+
+	filter->exposure_strength_param = gs_effect_get_param_by_name(filter->effect, "exposure_strength");
+
+	if (!filter->exposure_strength_param) {
+		blog(LOG_ERROR, BLOG_PREFIX "Shader parameter 'exposure_strength' was not found");
 		goto fail;
 	}
 
@@ -973,6 +998,10 @@ static void filter_render(
 	gs_effect_set_float(
 		filter->boost_param,
 		filter->current_boost);
+
+	gs_effect_set_float(
+		filter->exposure_strength_param, 
+		filter->exposure_strength);
 
 	obs_source_process_filter_end(
 		filter->context,
